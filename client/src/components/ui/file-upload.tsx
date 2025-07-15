@@ -6,36 +6,55 @@ import { CloudUpload, FileImage, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
-  onFileUpload: (file: File) => void;
+  onFileUpload?: (file: File) => void;
+  onBatchUpload?: (files: File[]) => void;
   isLoading?: boolean;
   accept?: string;
   maxSize?: number;
   className?: string;
+  multiple?: boolean;
+  mode?: 'single' | 'batch';
 }
 
 export function FileUpload({ 
   onFileUpload, 
+  onBatchUpload,
   isLoading = false, 
   accept = "image/*",
   maxSize = 10 * 1024 * 1024, // 10MB default
-  className 
+  className,
+  multiple = false,
+  mode = 'single'
 }: FileUploadProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      setSelectedFile(file);
+    if (mode === 'single' && acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      setSelectedFiles([file]);
       
       // Create preview
       const reader = new FileReader();
       reader.onload = () => {
-        setPreview(reader.result as string);
+        setPreviews([reader.result as string]);
       };
       reader.readAsDataURL(file);
+    } else if (mode === 'batch') {
+      setSelectedFiles(acceptedFiles);
+      
+      // Create previews for all files
+      const readers = acceptedFiles.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      });
+      
+      Promise.all(readers).then(setPreviews);
     }
-  }, []);
+  }, [mode]);
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
@@ -43,19 +62,28 @@ export function FileUpload({
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     },
     maxSize,
-    multiple: false,
+    multiple: mode === 'batch',
     disabled: isLoading
   });
 
   const handleUpload = () => {
-    if (selectedFile) {
-      onFileUpload(selectedFile);
+    if (mode === 'single' && selectedFiles.length > 0 && onFileUpload) {
+      onFileUpload(selectedFiles[0]);
+    } else if (mode === 'batch' && selectedFiles.length > 0 && onBatchUpload) {
+      onBatchUpload(selectedFiles);
     }
   };
 
   const handleClear = () => {
-    setSelectedFile(null);
-    setPreview(null);
+    setSelectedFiles([]);
+    setPreviews([]);
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newPreviews = previews.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    setPreviews(newPreviews);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -68,7 +96,7 @@ export function FileUpload({
 
   return (
     <div className={cn("w-full", className)}>
-      {!selectedFile ? (
+      {selectedFiles.length === 0 ? (
         <div
           {...getRootProps()}
           className={cn(
@@ -81,72 +109,142 @@ export function FileUpload({
           <input {...getInputProps()} />
           <div className="group">
             <CloudUpload className="w-12 h-12 text-cyan-400 mx-auto mb-4 group-hover:scale-110 transition-transform duration-200" />
-            <h3 className="text-xl font-semibold text-white mb-2">Upload Fish Image</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              {mode === 'batch' ? 'Upload Fish Images' : 'Upload Fish Image'}
+            </h3>
             <p className="text-blue-200 mb-4">
-              {isDragActive ? "Drop the image here..." : "Drag and drop or click to select image"}
+              {isDragActive 
+                ? "Drop the images here..." 
+                : mode === 'batch' 
+                ? "Drag and drop or click to select multiple images"
+                : "Drag and drop or click to select image"
+              }
             </p>
             <p className="text-blue-300 text-sm">
-              Supports JPEG, PNG, WebP (Max {formatFileSize(maxSize)})
+              Supports JPEG, PNG, WebP (Max {formatFileSize(maxSize)} each)
+              {mode === 'batch' && <br />}
+              {mode === 'batch' && "Up to 10 images at once"}
             </p>
           </div>
         </div>
       ) : (
         <Card className="glass-morphism border-white/20">
           <CardContent className="p-6">
-            <div className="flex items-start space-x-4">
-              {preview && (
-                <img 
-                  src={preview} 
-                  alt="Preview" 
-                  className="w-24 h-24 object-cover rounded-lg border border-white/20"
-                />
-              )}
-              
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <FileImage className="w-5 h-5 text-cyan-400" />
-                  <span className="text-white font-medium">{selectedFile.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClear}
-                    disabled={isLoading}
-                    className="ml-auto text-blue-200 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                <p className="text-blue-200 text-sm mb-4">
-                  Size: {formatFileSize(selectedFile.size)}
-                </p>
+            {mode === 'single' ? (
+              <div className="flex items-start space-x-4">
+                {previews[0] && (
+                  <img 
+                    src={previews[0]} 
+                    alt="Preview" 
+                    className="w-24 h-24 object-cover rounded-lg border border-white/20"
+                  />
+                )}
                 
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleUpload}
-                    disabled={isLoading}
-                    className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Identifying...
-                      </>
-                    ) : (
-                      "Identify Fish"
-                    )}
-                  </Button>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <FileImage className="w-5 h-5 text-cyan-400" />
+                    <span className="text-white font-medium">{selectedFiles[0].name}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClear}
+                      disabled={isLoading}
+                      className="ml-auto text-blue-200 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-blue-200 text-sm mb-4">
+                    Size: {formatFileSize(selectedFiles[0].size)}
+                  </p>
                   
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={handleUpload}
+                      disabled={isLoading}
+                      className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Identifying...
+                        </>
+                      ) : (
+                        "Identify Fish"
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={handleClear}
+                      disabled={isLoading}
+                      className="border-white/20 text-blue-200 hover:text-white hover:bg-white/10"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-white font-medium">
+                    {selectedFiles.length} image{selectedFiles.length !== 1 ? 's' : ''} selected
+                  </h4>
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={handleClear}
                     disabled={isLoading}
                     className="border-white/20 text-blue-200 hover:text-white hover:bg-white/10"
                   >
-                    Clear
+                    Clear All
                   </Button>
                 </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 max-h-64 overflow-y-auto">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="relative">
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        {previews[index] && (
+                          <img 
+                            src={previews[index]} 
+                            alt={`Preview ${index + 1}`} 
+                            className="w-full h-20 object-cover rounded mb-2"
+                          />
+                        )}
+                        <p className="text-white text-xs truncate">{file.name}</p>
+                        <p className="text-blue-300 text-xs">{formatFileSize(file.size)}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          disabled={isLoading}
+                          className="absolute top-1 right-1 w-6 h-6 p-0 text-blue-200 hover:text-white"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <Button
+                  onClick={handleUpload}
+                  disabled={isLoading || selectedFiles.length === 0}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing {selectedFiles.length} images...
+                    </>
+                  ) : (
+                    `Identify ${selectedFiles.length} Fish Images`
+                  )}
+                </Button>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}
