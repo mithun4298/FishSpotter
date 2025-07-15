@@ -49,6 +49,7 @@ export default function Auth() {
         title: "Success!",
         description: isLogin ? "Welcome back!" : "Account created successfully!",
       });
+      // Redirect to fish identification page after authentication
       setLocation("/");
     },
     onError: (error: Error) => {
@@ -134,6 +135,7 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           {showForgotPassword ? (
+            // Forgot Password Form
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div>
                 <Input
@@ -164,84 +166,82 @@ export default function Auth() {
               </Button>
             </form>
           ) : (
-            <>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!isLogin && (
-                  <>
-                    <div>
-                      <Input
-                        type="text"
-                        name="firstName"
-                        placeholder="First Name"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        required={!isLogin}
-                      />
-                    </div>
-                    <div>
-                      <Input
-                        type="text"
-                        name="lastName"
-                        placeholder="Last Name"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        required={!isLogin}
-                      />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <Input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={authMutation.isPending}
-                >
-                  {authMutation.isPending 
-                    ? "Please wait..." 
-                    : (isLogin ? "Sign In" : "Create Account")}
-                </Button>
-              </form>
-              
-              <div className="mt-4 text-center space-y-2">
-                {isLogin && (
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(true)}
-                    className="text-sm text-blue-600 hover:underline block w-full"
-                  >
-                    Forgot your password?
-                  </button>
-                )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <>
+                  <div>
+                    <Input
+                      type="text"
+                      name="firstName"
+                      placeholder="First Name"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      required={!isLogin}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="text"
+                      name="lastName"
+                      placeholder="Last Name"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required={!isLogin}
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <Input
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div>
+                <Input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={authMutation.isPending}
+              >
+                {authMutation.isPending 
+                  ? "Please wait..." 
+                  : (isLogin ? "Sign In" : "Create Account")}
+              </Button>
+            </form>
+            
+            <div className="mt-4 text-center space-y-2">
+              {isLogin && (
                 <button
                   type="button"
-                  onClick={() => setIsLogin(!isLogin)}
-                  className="text-sm text-blue-600 hover:underline"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-blue-600 hover:underline block w-full"
                 >
-                  {isLogin 
-                    ? "Don't have an account? Sign up" 
-                    : "Already have an account? Sign in"}
+                  Forgot your password?
                 </button>
-              </div>
-            </>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                {isLogin 
+                  ? "Don't have an account? Sign up" 
+                  : "Already have an account? Sign in"}
+              </button>
+            </div>
           )}
         </CardContent>
       </Card>

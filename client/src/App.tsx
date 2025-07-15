@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Auth from "@/pages/auth";
@@ -29,19 +31,34 @@ function Router() {
 
   return (
     <Switch>
-      {isLoading ? (
-        <Route path="/" component={Splash} />
-      ) : !isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/auth" component={Auth} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-        </>
-      )}
-      <Route component={NotFound} />
+      {/* Public routes - only accessible when NOT authenticated */}
+      <Route path="/">
+        {!isAuthenticated ? <Landing /> : <ProtectedRoute><Home /></ProtectedRoute>}
+      </Route>
+      
+      <Route path="/auth">
+        <PublicRoute>
+          <Auth />
+        </PublicRoute>
+      </Route>
+
+      {/* Protected routes - only accessible when authenticated */}
+      <Route path="/home">
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Fallback for unauthenticated users - always redirect to landing */}
+      <Route>
+        {isLoading ? (
+          <Splash />
+        ) : !isAuthenticated ? (
+          <Landing />
+        ) : (
+          <NotFound />
+        )}
+      </Route>
     </Switch>
   );
 }
