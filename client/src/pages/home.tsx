@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fish, Bell, User, Brain, Search, Image, Smartphone } from "lucide-react";
 import type { FishIdentification } from "@shared/schema";
 
@@ -36,7 +37,7 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  // Fish identification mutation
+  // Fish identification mutations
   const identifyFishMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -72,8 +73,49 @@ export default function Home() {
     },
   });
 
+  const identifyBatchMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append("images", file);
+      });
+      
+      const response = await apiRequest("POST", "/api/identify-fish-batch", formData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Batch Processing Complete",
+        description: `Successfully identified ${data.processedCount} out of ${data.totalFiles} fish images.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/fish-identifications"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to process batch identification. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFileUpload = (file: File) => {
     identifyFishMutation.mutate(file);
+  };
+
+  const handleBatchUpload = (files: File[]) => {
+    identifyBatchMutation.mutate(files);
   };
 
   const handleLogout = () => {
@@ -142,12 +184,37 @@ export default function Home() {
           <CardContent className="p-8">
             <h2 className="text-2xl font-semibold text-white mb-6 text-center">Identify Your Fish</h2>
             
-            <FileUpload
-              onFileUpload={handleFileUpload}
-              isLoading={identifyFishMutation.isPending}
-              accept="image/*"
-              maxSize={10 * 1024 * 1024} // 10MB
-            />
+            <Tabs defaultValue="single" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/10">
+                <TabsTrigger value="single" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
+                  Single Image
+                </TabsTrigger>
+                <TabsTrigger value="batch" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
+                  Multiple Images
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="single">
+                <FileUpload
+                  mode="single"
+                  onFileUpload={handleFileUpload}
+                  isLoading={identifyFishMutation.isPending}
+                  accept="image/*"
+                  maxSize={10 * 1024 * 1024} // 10MB
+                />
+              </TabsContent>
+              
+              <TabsContent value="batch">
+                <FileUpload
+                  mode="batch"
+                  onBatchUpload={handleBatchUpload}
+                  isLoading={identifyBatchMutation.isPending}
+                  accept="image/*"
+                  maxSize={10 * 1024 * 1024} // 10MB
+                  multiple={true}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 

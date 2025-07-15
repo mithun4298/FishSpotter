@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Fish identification routes
+  // Fish identification routes - single image
   app.post("/api/identify-fish", isAuthenticated, upload.single("image"), async (req: any, res) => {
     try {
       if (!req.file) {
@@ -52,6 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.user.claims.sub;
       const imagePath = req.file.path;
+
+      console.log("Processing single fish identification for user:", userId);
+      console.log("Image path:", imagePath);
 
       // Identify the fish using Gemini API
       const identification = await identifyFish(imagePath);
@@ -69,7 +72,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error identifying fish:", error);
-      res.status(500).json({ message: "Failed to identify fish" });
+      res.status(500).json({ message: "Failed to identify fish", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Fish identification routes - multiple images
+  app.post("/api/identify-fish-batch", isAuthenticated, upload.array("images", 10), async (req: any, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: "No image files provided" });
+      }
+
+      const userId = req.user.claims.sub;
+      const files = req.files as Express.Multer.File[];
+
+      console.log(`Processing batch fish identification for user: ${userId}, files: ${files.length}`);
+
+      const results = [];
+      const errors = [];
+
+      // Process each image
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          console.log(`Processing file ${i + 1}/${files.length}: ${file.originalname}`);
+          
+          // Identify the fish using Gemini API
+          const identification = await identifyFish(file.path);
+
+          // Store the identification in the database
+          const result = await storage.createFishIdentification({
+            userId,
+            imageUrl: `/uploads/${file.filename}`,
+            species: identification.species,
+            commonName: identification.commonName,
+            confidence: identification.confidence.toString(),
+            details: identification.details,
+          });
+
+          results.push({
+            ...result,
+            originalName: file.originalname,
+            success: true
+          });
+        } catch (error) {
+          console.error(`Error processing file ${file.originalname}:`, error);
+          errors.push({
+            originalName: file.originalname,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            success: false
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        processedCount: results.length,
+        errorCount: errors.length,
+        totalFiles: files.length,
+        results,
+        errors
+      });
+    } catch (error) {
+      console.error("Error in batch fish identification:", error);
+      res.status(500).json({ message: "Failed to process batch identification", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
