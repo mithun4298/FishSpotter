@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fish, Bell, User, Brain, Search, Image, Smartphone } from "lucide-react";
+import { Fish, Bell, User, Brain, Search, Image, Smartphone, Camera } from "lucide-react";
+import { Link } from "wouter";
 import type { FishIdentification } from "@shared/schema";
 
 export default function Home() {
@@ -40,16 +41,8 @@ export default function Home() {
   // Fish identification mutations
   const identifyFishMutation = useMutation({
     mutationFn: async (file: File) => {
-      console.log("Single file upload - File details:", {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-      
       const formData = new FormData();
       formData.append("image", file);
-      
-      console.log("FormData entries:", Array.from(formData.entries()));
       
       const response = await apiRequest("POST", "/api/identify-fish", formData);
       return response.json();
@@ -83,18 +76,10 @@ export default function Home() {
 
   const identifyBatchMutation = useMutation({
     mutationFn: async (files: File[]) => {
-      console.log("Batch file upload - Files details:", files.map(f => ({
-        name: f.name,
-        size: f.size,
-        type: f.type
-      })));
-      
       const formData = new FormData();
       files.forEach(file => {
         formData.append("images", file);
       });
-      
-      console.log("FormData entries:", Array.from(formData.entries()));
       
       const response = await apiRequest("POST", "/api/identify-fish-batch", formData);
       return response.json();
@@ -195,10 +180,21 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Quick Identify Link */}
+        <div className="text-center mb-8">
+          <Link href="/identify">
+            <Button size="lg" className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-4 text-lg">
+              <Camera className="mr-3 h-6 w-6" />
+              Quick Fish Identification
+            </Button>
+          </Link>
+          <p className="text-blue-200 mt-2">Use our focused identification page for better camera capture</p>
+        </div>
+
         {/* Upload Section */}
         <Card className="glass-morphism border-white/20 mb-8">
           <CardContent className="p-8">
-            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Identify Your Fish</h2>
+            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Advanced Upload & Batch Processing</h2>
             
             <Tabs defaultValue="single" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/10">

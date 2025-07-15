@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Splash from "@/pages/splash";
+import Identify from "@/pages/identify";
 import { useState, useEffect } from "react";
 
 function Router() {
@@ -33,6 +34,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/identify" component={Identify} />
         </>
       )}
       <Route component={NotFound} />

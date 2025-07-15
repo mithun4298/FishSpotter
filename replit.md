@@ -50,7 +50,8 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Pages
 - **Splash Screen**: Animated loading screen with ocean theme
 - **Landing Page**: Public homepage with feature showcase
-- **Home Page**: Authenticated user dashboard with file upload and history
+- **Home Page**: Authenticated user dashboard with batch upload and history
+- **Identify Page**: Dedicated fish identification with camera capture and accordion results
 - **404 Page**: Custom not found page
 
 ### UI Components
@@ -130,6 +131,14 @@ Preferred communication style: Simple, everyday language.
 - **Backend**: Added detailed logging and error messages for debugging file upload issues
 - **Frontend**: Added console logging to track file details and FormData construction
 - **User Experience**: Clear error messages for failed uploads and batch processing results
+
+### Added Dedicated Identification Page
+- **Feature**: Created focused `/identify` page for streamlined fish identification experience
+- **Camera Capture**: Native camera capture with environment camera preference for mobile devices
+- **Clean Design**: Deliberately avoided feature cards for focused user experience
+- **Accordion Results**: Organized fish information in expandable sections (Basic Info, Habitat, Diet, Conservation)
+- **Navigation**: Seamless navigation between Home dashboard and focused identification page
+- **Progress Feedback**: Visual loading indicators and progress tracking during AI processing
 
 ## Key Design Decisions
 
