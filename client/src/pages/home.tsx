@@ -40,8 +40,16 @@ export default function Home() {
   // Fish identification mutations
   const identifyFishMutation = useMutation({
     mutationFn: async (file: File) => {
+      console.log("Single file upload - File details:", {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+      
       const formData = new FormData();
       formData.append("image", file);
+      
+      console.log("FormData entries:", Array.from(formData.entries()));
       
       const response = await apiRequest("POST", "/api/identify-fish", formData);
       return response.json();
@@ -75,10 +83,18 @@ export default function Home() {
 
   const identifyBatchMutation = useMutation({
     mutationFn: async (files: File[]) => {
+      console.log("Batch file upload - Files details:", files.map(f => ({
+        name: f.name,
+        size: f.size,
+        type: f.type
+      })));
+      
       const formData = new FormData();
       files.forEach(file => {
         formData.append("images", file);
       });
+      
+      console.log("FormData entries:", Array.from(formData.entries()));
       
       const response = await apiRequest("POST", "/api/identify-fish-batch", formData);
       return response.json();
