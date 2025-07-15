@@ -8,14 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fish, Bell, User, Brain, Search, Image, Smartphone, Camera } from "lucide-react";
-import { Link } from "wouter";
+import { Fish, Bell, User, Brain, Search, Image, Smartphone, Camera, Upload, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import type { FishIdentification } from "@shared/schema";
+
+interface FishIdentificationResult {
+  species: string;
+  commonName: string;
+  confidence: number;
+  details: {
+    description?: string;
+    habitat?: string;
+    size?: string;
+    diet?: string;
+    characteristics?: string[];
+    conservationStatus?: string;
+  };
+}
 
 export default function Home() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [identificationResult, setIdentificationResult] = useState<FishIdentificationResult | null>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -47,10 +70,11 @@ export default function Home() {
       const response = await apiRequest("POST", "/api/identify-fish", formData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setIdentificationResult(data);
       toast({
-        title: "Success",
-        description: "Fish identified successfully!",
+        title: "Fish Identified!",
+        description: `Found: ${data.commonName}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/fish-identifications"] });
     },
@@ -111,12 +135,59 @@ export default function Home() {
     },
   });
 
+  const handleCameraCapture = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment"; // Prefer rear camera
+    input.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileSelection(file);
+      }
+    };
+    input.click();
+  };
+
   const handleFileUpload = (file: File) => {
+    handleFileSelection(file);
+  };
+
+  const handleGalleryUpload = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileSelection(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleFileSelection = (file: File) => {
+    setSelectedFile(file);
+    
+    // Create preview URL
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    
+    // Clear previous results
+    setIdentificationResult(null);
+    
+    // Automatically identify the fish
     identifyFishMutation.mutate(file);
   };
 
   const handleBatchUpload = (files: File[]) => {
     identifyBatchMutation.mutate(files);
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 90) return "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100";
+    if (confidence >= 70) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100";
+    return "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100";
   };
 
   const handleLogout = () => {
@@ -180,21 +251,138 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Quick Identify Link */}
-        <div className="text-center mb-8">
-          <Link href="/identify">
-            <Button size="lg" className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-4 text-lg">
-              <Camera className="mr-3 h-6 w-6" />
-              Quick Fish Identification
-            </Button>
-          </Link>
-          <p className="text-blue-200 mt-2">Use our focused identification page for better camera capture</p>
-        </div>
-
-        {/* Upload Section */}
+        {/* Main Fish Identification Section */}
         <Card className="glass-morphism border-white/20 mb-8">
           <CardContent className="p-8">
-            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Advanced Upload & Batch Processing</h2>
+            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Fish Identification</h2>
+            
+            {/* Camera & Upload Options */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <Button
+                onClick={handleCameraCapture}
+                size="lg"
+                className="h-24 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl flex flex-col gap-2"
+              >
+                <Camera className="h-8 w-8" />
+                <span className="text-lg font-semibold">Capture from Camera</span>
+              </Button>
+
+              <Button
+                onClick={handleGalleryUpload}
+                size="lg"
+                variant="outline"
+                className="h-24 border-2 border-white/30 hover:bg-white/10 text-white rounded-xl flex flex-col gap-2"
+              >
+                <Upload className="h-8 w-8" />
+                <span className="text-lg font-semibold">Upload from Gallery</span>
+              </Button>
+            </div>
+
+            {/* Image Preview */}
+            {previewUrl && (
+              <div className="mb-6">
+                <div className="relative mx-auto max-w-md">
+                  <img
+                    src={previewUrl}
+                    alt="Fish preview"
+                    className="w-full rounded-lg shadow-lg"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Progress Indicator */}
+            {identifyFishMutation.isPending && (
+              <div className="text-center mb-6">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                <p className="mt-2 text-blue-200">
+                  Processing your image with AI...
+                </p>
+              </div>
+            )}
+
+            {/* Identification Results */}
+            {identificationResult && (
+              <div className="bg-white/10 rounded-xl p-6 mb-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {identificationResult.commonName}
+                  </h3>
+                  <p className="text-lg text-blue-200 italic mb-4">
+                    {identificationResult.species}
+                  </p>
+                  <Badge className={`text-lg px-4 py-2 ${getConfidenceColor(identificationResult.confidence)}`}>
+                    {identificationResult.confidence}% Confidence
+                  </Badge>
+                </div>
+
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="basic-info" className="border-white/20">
+                    <AccordionTrigger className="text-left text-lg font-semibold text-white hover:text-cyan-300">
+                      Basic Information
+                    </AccordionTrigger>
+                    <AccordionContent className="text-blue-200 space-y-4">
+                      {identificationResult.details.description && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-white">Description</h4>
+                          <p>{identificationResult.details.description}</p>
+                        </div>
+                      )}
+                      {identificationResult.details.size && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-white">Size</h4>
+                          <p>{identificationResult.details.size}</p>
+                        </div>
+                      )}
+                      {identificationResult.details.characteristics && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-white">Key Characteristics</h4>
+                          <ul className="list-disc list-inside space-y-1">
+                            {identificationResult.details.characteristics.map((char, index) => (
+                              <li key={index}>{char}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="habitat" className="border-white/20">
+                    <AccordionTrigger className="text-left text-lg font-semibold text-white hover:text-cyan-300">
+                      Habitat & Distribution
+                    </AccordionTrigger>
+                    <AccordionContent className="text-blue-200">
+                      <p>{identificationResult.details.habitat || "Habitat information not available."}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="diet" className="border-white/20">
+                    <AccordionTrigger className="text-left text-lg font-semibold text-white hover:text-cyan-300">
+                      Diet & Behavior
+                    </AccordionTrigger>
+                    <AccordionContent className="text-blue-200">
+                      <p>{identificationResult.details.diet || "Diet information not available."}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="conservation" className="border-white/20">
+                    <AccordionTrigger className="text-left text-lg font-semibold text-white hover:text-cyan-300">
+                      Conservation Status
+                    </AccordionTrigger>
+                    <AccordionContent className="text-blue-200">
+                      <p>{identificationResult.details.conservationStatus || "Conservation status information not available."}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Batch Processing Section */}
+        <Card className="glass-morphism border-white/20 mb-8">
+          <CardContent className="p-8">
+            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Batch Processing</h2>
             
             <Tabs defaultValue="single" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/10">
