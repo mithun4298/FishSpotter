@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Fish, Brain, Search, Image, Smartphone } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const [, setLocation] = useLocation();
+
+  const handleGetStarted = () => {
+    setLocation("/auth");
   };
 
   return (
@@ -32,7 +35,7 @@ export default function Landing() {
               Upload any fish image and get instant, accurate species identification powered by advanced machine learning algorithms
             </p>
             <Button 
-              onClick={handleLogin}
+              onClick={handleGetStarted}
               size="lg"
               className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold px-8 py-3 rounded-xl transform hover:scale-105 transition-all duration-200 shadow-lg"
             >
@@ -82,7 +85,7 @@ export default function Landing() {
                 <h3 className="text-2xl font-semibold text-white mb-4">Ready to Explore?</h3>
                 <p className="text-blue-200 mb-6">Join thousands of marine enthusiasts and researchers using Fish ID for accurate species identification</p>
                 <Button 
-                  onClick={handleLogin}
+                  onClick={handleGetStarted}
                   size="lg"
                   className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold px-8 py-3 rounded-xl transform hover:scale-105 transition-all duration-200 shadow-lg"
                 >

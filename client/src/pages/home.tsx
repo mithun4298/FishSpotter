@@ -6,9 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileUpload } from "@/components/ui/file-upload";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fish, Bell, User, Brain, Search, Image, Smartphone, Camera, Upload, Loader2 } from "lucide-react";
+import { Fish, Bell, User, Brain, Search, Image, Smartphone, Camera, Upload, Loader2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -39,6 +37,9 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [identificationResult, setIdentificationResult] = useState<FishIdentificationResult | null>(null);
+  const [batchResults, setBatchResults] = useState<any>(null);
+  const [showBatchDetails, setShowBatchDetails] = useState(false);
+  const [sourceMode, setSourceMode] = useState<'camera' | 'gallery'>('gallery');
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -109,6 +110,8 @@ export default function Home() {
       return response.json();
     },
     onSuccess: (data) => {
+      setBatchResults(data);
+      setShowBatchDetails(true);
       toast({
         title: "Batch Processing Complete",
         description: `Successfully identified ${data.processedCount} out of ${data.totalFiles} fish images.`,
@@ -138,35 +141,68 @@ export default function Home() {
   const handleCameraCapture = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = "image/jpeg,image/png,image/webp";
+    input.multiple = true;
     input.capture = "environment"; // Prefer rear camera
+    input.setAttribute("accept", "image/jpeg,image/png,image/webp");
     input.onchange = (event) => {
-      const file = (event.target as HTMLInputElement).files?.[0];
-      if (file) {
-        handleFileSelection(file);
+      const files = Array.from((event.target as HTMLInputElement).files || []);
+      if (files.length > 0) {
+        // Validate file sizes (10MB max each)
+        const validFiles = files.filter(file => {
+          if (file.size > 10 * 1024 * 1024) {
+            toast({
+              title: "File too large",
+              description: `${file.name} exceeds 10MB limit`,
+              variant: "destructive",
+            });
+            return false;
+          }
+          return true;
+        });
+        
+        if (validFiles.length === 1) {
+          handleSingleFileSelection(validFiles[0]);
+        } else if (validFiles.length > 1) {
+          handleBatchUpload(validFiles);
+        }
       }
     };
     input.click();
-  };
-
-  const handleFileUpload = (file: File) => {
-    handleFileSelection(file);
   };
 
   const handleGalleryUpload = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = "image/jpeg,image/png,image/webp";
+    input.multiple = true;
     input.onchange = (event) => {
-      const file = (event.target as HTMLInputElement).files?.[0];
-      if (file) {
-        handleFileSelection(file);
+      const files = Array.from((event.target as HTMLInputElement).files || []);
+      if (files.length > 0) {
+        // Validate file sizes (10MB max each)
+        const validFiles = files.filter(file => {
+          if (file.size > 10 * 1024 * 1024) {
+            toast({
+              title: "File too large",
+              description: `${file.name} exceeds 10MB limit`,
+              variant: "destructive",
+            });
+            return false;
+          }
+          return true;
+        });
+        
+        if (validFiles.length === 1) {
+          handleSingleFileSelection(validFiles[0]);
+        } else if (validFiles.length > 1) {
+          handleBatchUpload(validFiles);
+        }
       }
     };
     input.click();
   };
 
-  const handleFileSelection = (file: File) => {
+  const handleSingleFileSelection = (file: File) => {
     setSelectedFile(file);
     
     // Create preview URL
@@ -175,12 +211,19 @@ export default function Home() {
     
     // Clear previous results
     setIdentificationResult(null);
+    setBatchResults(null);
+    setShowBatchDetails(false);
     
     // Automatically identify the fish
     identifyFishMutation.mutate(file);
   };
 
   const handleBatchUpload = (files: File[]) => {
+    // Clear single file results
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setIdentificationResult(null);
+    
     identifyBatchMutation.mutate(files);
   };
 
@@ -256,25 +299,59 @@ export default function Home() {
           <CardContent className="p-8">
             <h2 className="text-2xl font-semibold text-white mb-6 text-center">Fish Identification</h2>
             
-            {/* Camera & Upload Options */}
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Dual Source Selector */}
+            <div className="flex gap-4 mb-8 max-w-md mx-auto">
               <Button
-                onClick={handleCameraCapture}
-                size="lg"
-                className="h-24 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl flex flex-col gap-2"
+                onClick={() => setSourceMode('camera')}
+                variant={sourceMode === 'camera' ? 'default' : 'outline'}
+                className={`flex-1 h-12 rounded-xl font-semibold ${
+                  sourceMode === 'camera' 
+                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
+                    : 'border-2 border-white/30 hover:bg-white/10 text-white bg-transparent'
+                }`}
               >
-                <Camera className="h-8 w-8" />
-                <span className="text-lg font-semibold">Capture from Camera</span>
+                <Camera className="h-5 w-5 mr-2" />
+                Capture from Camera
               </Button>
 
               <Button
-                onClick={handleGalleryUpload}
-                size="lg"
-                variant="outline"
-                className="h-24 border-2 border-white/30 hover:bg-white/10 text-white rounded-xl flex flex-col gap-2"
+                onClick={() => setSourceMode('gallery')}
+                variant={sourceMode === 'gallery' ? 'default' : 'outline'}
+                className={`flex-1 h-12 rounded-xl font-semibold ${
+                  sourceMode === 'gallery' 
+                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
+                    : 'border-2 border-white/30 hover:bg-white/10 text-white bg-transparent'
+                }`}
               >
-                <Upload className="h-8 w-8" />
-                <span className="text-lg font-semibold">Upload from Gallery</span>
+                <Upload className="h-5 w-5 mr-2" />
+                Upload from Gallery
+              </Button>
+            </div>
+
+            {/* Single File Input Area */}
+            <div className="mb-8">
+              <Button
+                onClick={sourceMode === 'camera' ? handleCameraCapture : handleGalleryUpload}
+                size="lg"
+                className="w-full h-32 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl flex flex-col gap-3 border-2 border-dashed border-white/30"
+              >
+                {sourceMode === 'camera' ? (
+                  <>
+                    <Camera className="h-12 w-12" />
+                    <div className="text-center">
+                      <div className="text-xl font-bold">Take Photo</div>
+                      <div className="text-sm opacity-90">JPEG, PNG, WebP • Max 10MB each • Multiple photos supported</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-12 w-12" />
+                    <div className="text-center">
+                      <div className="text-xl font-bold">Choose Files</div>
+                      <div className="text-sm opacity-90">JPEG, PNG, WebP • Max 10MB each • Multiple photos supported</div>
+                    </div>
+                  </>
+                )}
               </Button>
             </div>
 
@@ -376,82 +453,131 @@ export default function Home() {
                 </Accordion>
               </div>
             )}
+
+            {/* Batch Processing Results */}
+            {batchResults && showBatchDetails && (
+              <div className="bg-white/10 rounded-xl p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-2xl font-bold text-white">
+                    Batch Processing Results
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowBatchDetails(false)}
+                    className="text-white hover:bg-white/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-green-500/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-300">{batchResults.processedCount}</div>
+                    <div className="text-green-200 text-sm">Successfully Processed</div>
+                  </div>
+                  <div className="bg-red-500/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-red-300">{batchResults.errorCount}</div>
+                    <div className="text-red-200 text-sm">Failed to Process</div>
+                  </div>
+                  <div className="bg-blue-500/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-300">{batchResults.totalFiles}</div>
+                    <div className="text-blue-200 text-sm">Total Files</div>
+                  </div>
+                </div>
+
+                {/* Successful Results */}
+                {batchResults.results && batchResults.results.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-white mb-3">Successfully Identified</h4>
+                    <div className="space-y-3">
+                      {batchResults.results.map((result: any, index: number) => (
+                        <div key={index} className="bg-white/5 rounded-lg p-4 border border-green-400/30">
+                          <div className="flex items-start space-x-4">
+                            <img 
+                              src={result.imageUrl} 
+                              alt={result.commonName}
+                              className="w-20 h-20 object-cover rounded-lg"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-white font-medium">{result.commonName}</h5>
+                                <Badge className={`${getConfidenceColor(parseFloat(result.confidence))}`}>
+                                  {result.confidence}% Confidence
+                                </Badge>
+                              </div>
+                              <p className="text-blue-200 text-sm italic mb-2">{result.species}</p>
+                              <p className="text-xs text-gray-300">File: {result.originalName}</p>
+                              {result.details && (
+                                <p className="text-blue-200 text-sm mt-2 line-clamp-2">
+                                  {result.details.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Results */}
+                {batchResults.errors && batchResults.errors.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-white mb-3">Failed to Process</h4>
+                    <div className="space-y-2">
+                      {batchResults.errors.map((error: any, index: number) => (
+                        <div key={index} className="bg-red-500/10 rounded-lg p-3 border border-red-400/30">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white text-sm">{error.originalName}</span>
+                            <span className="text-red-300 text-xs">{error.error}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Batch Processing Section */}
-        <Card className="glass-morphism border-white/20 mb-8">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Batch Processing</h2>
+        {/* Features Grid - Only show when not authenticated */}
+        {!isAuthenticated && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="glass-morphism border-white/20 text-center p-6">
+              <CardContent className="pt-6">
+                <Brain className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">AI-Powered</h3>
+                <p className="text-blue-200 text-sm">Advanced machine learning algorithms for precise species matching</p>
+              </CardContent>
+            </Card>
             
-            <Tabs defaultValue="single" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/10">
-                <TabsTrigger value="single" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
-                  Single Image
-                </TabsTrigger>
-                <TabsTrigger value="batch" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
-                  Multiple Images
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="single">
-                <FileUpload
-                  mode="single"
-                  onFileUpload={handleFileUpload}
-                  isLoading={identifyFishMutation.isPending}
-                  accept="image/*"
-                  maxSize={10 * 1024 * 1024} // 10MB
-                />
-              </TabsContent>
-              
-              <TabsContent value="batch">
-                <FileUpload
-                  mode="batch"
-                  onBatchUpload={handleBatchUpload}
-                  isLoading={identifyBatchMutation.isPending}
-                  accept="image/*"
-                  maxSize={10 * 1024 * 1024} // 10MB
-                  multiple={true}
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-morphism border-white/20 text-center p-6">
-            <CardContent className="pt-6">
-              <Brain className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">AI-Powered</h3>
-              <p className="text-blue-200 text-sm">Advanced machine learning algorithms for precise species matching</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-morphism border-white/20 text-center p-6">
-            <CardContent className="pt-6">
-              <Search className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">High Accuracy</h3>
-              <p className="text-blue-200 text-sm">99%+ accuracy rate with thousands of fish species in our database</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-morphism border-white/20 text-center p-6">
-            <CardContent className="pt-6">
-              <Image className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Batch Processing</h3>
-              <p className="text-blue-200 text-sm">Upload multiple images for comparison and analysis</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-morphism border-white/20 text-center p-6">
-            <CardContent className="pt-6">
-              <Smartphone className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Mobile Ready</h3>
-              <p className="text-blue-200 text-sm">Optimized for mobile devices with offline capabilities</p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="glass-morphism border-white/20 text-center p-6">
+              <CardContent className="pt-6">
+                <Search className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">High Accuracy</h3>
+                <p className="text-blue-200 text-sm">99%+ accuracy rate with thousands of fish species in our database</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="glass-morphism border-white/20 text-center p-6">
+              <CardContent className="pt-6">
+                <Image className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Batch Processing</h3>
+                <p className="text-blue-200 text-sm">Upload multiple images for comparison and analysis</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="glass-morphism border-white/20 text-center p-6">
+              <CardContent className="pt-6">
+                <Smartphone className="w-8 h-8 text-cyan-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Mobile Ready</h3>
+                <p className="text-blue-200 text-sm">Optimized for mobile devices with offline capabilities</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Recent Identifications */}
         <Card className="glass-morphism border-white/20">
@@ -500,7 +626,7 @@ export default function Home() {
                       </div>
                     </div>
                     <span className="text-blue-300 text-sm">
-                      {formatTimeAgo(identification.createdAt || "")}
+                      {formatTimeAgo(identification.createdAt ? identification.createdAt.toString() : "")}
                     </span>
                   </div>
                 ))}

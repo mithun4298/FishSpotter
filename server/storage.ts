@@ -16,6 +16,10 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // Authentication operations
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: { email: string; hashedPassword: string; firstName: string; lastName: string }): Promise<string>;
+  
   // Fish identification operations
   createFishIdentification(identification: InsertFishIdentification): Promise<FishIdentification>;
   getFishIdentificationsByUser(userId: string): Promise<FishIdentification[]>;
@@ -44,6 +48,23 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Authentication operations
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: { email: string; hashedPassword: string; firstName: string; lastName: string }): Promise<string> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        ...userData,
+      })
+      .returning();
+    return user.id;
   }
 
   // Fish identification operations

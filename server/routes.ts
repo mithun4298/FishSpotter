@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import * as auth from "./auth-working";
 import { identifyFish } from "./fishIdentification";
 import multer from "multer";
 import path from "path";
@@ -29,14 +29,21 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await auth.setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', auth.isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // For now, return the session user info since we're using simplified auth
+      const userId = req.session.userId;
+      const userEmail = req.session.userEmail;
+      
+      res.json({
+        id: userId,
+        email: userEmail,
+        firstName: "User",
+        lastName: "FishSpotter"
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -44,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fish identification routes - single image
-  app.post("/api/identify-fish", isAuthenticated, upload.single("image"), async (req: any, res) => {
+  app.post("/api/identify-fish", auth.isAuthenticated, upload.single("image"), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No image file provided" });
@@ -77,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fish identification routes - multiple images
-  app.post("/api/identify-fish-batch", isAuthenticated, upload.array("images", 10), async (req: any, res) => {
+  app.post("/api/identify-fish-batch", auth.isAuthenticated, upload.array("images", 10), async (req: any, res) => {
     try {
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({ message: "No image files provided" });
@@ -139,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/fish-identifications", isAuthenticated, async (req: any, res) => {
+  app.get("/api/fish-identifications", auth.isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const identifications = await storage.getFishIdentificationsByUser(userId);
@@ -150,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/fish-identifications/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/fish-identifications/:id", auth.isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const identification = await storage.getFishIdentification(id);
