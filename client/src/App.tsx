@@ -13,10 +13,20 @@ import Home from "@/pages/home";
 import Splash from "@/pages/splash";
 import { useState, useEffect } from "react";
 
+/**
+ * Main Router Component
+ * 
+ * Handles all application routing with comprehensive authentication guards:
+ * - Shows splash screen on initial load
+ * - Protects authenticated routes
+ * - Redirects unauthenticated users to landing page
+ * - Prevents authenticated users from accessing auth pages
+ */
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
+  // Show splash screen for 3 seconds on app load
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);

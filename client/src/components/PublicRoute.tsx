@@ -8,6 +8,15 @@ interface PublicRouteProps {
   redirectTo?: string;
 }
 
+/**
+ * PublicRoute Component
+ * 
+ * Protects routes that should only be accessible to unauthenticated users.
+ * If user is already authenticated, redirects to the specified route (default: home).
+ * 
+ * @param children - The components to render if not authenticated
+ * @param redirectTo - Where to redirect if authenticated (default: "/")
+ */
 export function PublicRoute({ children, redirectTo = "/" }: PublicRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
 

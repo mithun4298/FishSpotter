@@ -8,6 +8,15 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
+/**
+ * ProtectedRoute Component
+ * 
+ * Protects routes that require authentication. If user is not authenticated,
+ * redirects to the specified route (default: landing page).
+ * 
+ * @param children - The components to render if authenticated
+ * @param redirectTo - Where to redirect if not authenticated (default: "/")
+ */
 export function ProtectedRoute({ children, redirectTo = "/" }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
 

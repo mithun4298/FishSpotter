@@ -2,10 +2,24 @@ import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import { DatabaseStorage } from "./storage";
 
+/**
+ * Authentication System for FishSpotter
+ * 
+ * Provides complete authentication functionality including:
+ * - User registration and login
+ * - Session management with secure cookies
+ * - Password reset functionality
+ * - Route protection middleware
+ * - Comprehensive security measures
+ */
+
+/**
+ * Configure Express session middleware
+ * @returns Configured session middleware with secure settings
+ */
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   
-  // Use memory store for now
   return session({
     secret: process.env.SESSION_SECRET || "fallback-secret-key",
     resave: false,

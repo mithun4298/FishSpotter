@@ -3,8 +3,17 @@ import { useLocation } from "wouter";
 import { useEffect } from "react";
 
 /**
+ * Authentication Guard Hooks
+ * 
+ * Provides utility hooks for enforcing authentication requirements
+ * on pages and components throughout the application.
+ */
+
+/**
  * Hook to enforce authentication on any page
  * Automatically redirects to landing page if user is not authenticated
+ * 
+ * @returns Authentication state with loading status
  */
 export function useRequireAuth() {
   const { isAuthenticated, isLoading } = useAuth();
