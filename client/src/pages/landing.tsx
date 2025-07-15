@@ -1,13 +1,32 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Fish, Brain, Search, Image, Smartphone } from "lucide-react";
+import AuthModal from "@/components/AuthModal";
 import { useLocation } from "wouter";
 
+/**
+ * Landing Page Component
+ * 
+ * Modern landing page with modal authentication system.
+ * Features beautiful ocean gradient background, feature showcase,
+ * and seamless authentication modal integration.
+ */
 export default function Landing() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [, setLocation] = useLocation();
 
   const handleGetStarted = () => {
-    setLocation("/auth");
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = () => {
+    // Redirect to home page after successful authentication
+    setLocation("/");
+  };
+
+  const handleCloseAuthModal = () => {
+    setIsAuthModalOpen(false);
   };
 
   return (
@@ -101,6 +120,13 @@ export default function Landing() {
       <footer className="px-6 py-8 text-center">
         <p className="text-blue-300 text-xs">Powered by advanced AI technology</p>
       </footer>
+
+      {/* Authentication Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={handleCloseAuthModal}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

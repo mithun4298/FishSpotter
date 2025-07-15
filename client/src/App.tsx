@@ -5,10 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PublicRoute from "@/components/PublicRoute";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import Auth from "@/pages/auth";
 import Home from "@/pages/home";
 import Splash from "@/pages/splash";
 import { useState, useEffect } from "react";
@@ -41,15 +39,9 @@ function Router() {
 
   return (
     <Switch>
-      {/* Public routes - only accessible when NOT authenticated */}
+      {/* Root route - Landing page for unauthenticated, Home for authenticated */}
       <Route path="/">
         {!isAuthenticated ? <Landing /> : <ProtectedRoute><Home /></ProtectedRoute>}
-      </Route>
-      
-      <Route path="/auth">
-        <PublicRoute>
-          <Auth />
-        </PublicRoute>
       </Route>
 
       {/* Protected routes - only accessible when authenticated */}
@@ -59,7 +51,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      {/* Fallback for unauthenticated users - always redirect to landing */}
+      {/* Fallback - always redirect unauthenticated users to landing */}
       <Route>
         {isLoading ? (
           <Splash />
