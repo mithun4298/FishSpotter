@@ -113,7 +113,25 @@ Preferred communication style: Simple, everyday language.
 - **Database Migrations**: Schema managed through Drizzle Kit
 - **Static Assets**: Served from `dist/public` in production
 
-### Key Design Decisions
+### Recent Changes (July 15, 2025)
+
+### Fixed File Upload Issues
+- **Problem**: File uploads were failing due to incorrect Content-Type headers being set for FormData
+- **Solution**: Updated `apiRequest` function in `client/src/lib/queryClient.ts` to properly handle FormData uploads
+- **Impact**: Both single and batch fish identification now properly send files to backend
+
+### Added Batch Processing
+- **Feature**: Users can now upload up to 10 fish images simultaneously
+- **Implementation**: Added `/api/identify-fish-batch` endpoint and enhanced FileUpload component
+- **UI**: Tabbed interface allows switching between single and batch upload modes
+- **Processing**: Each image in batch is processed individually by Gemini API with comprehensive error handling
+
+### Enhanced Error Handling
+- **Backend**: Added detailed logging and error messages for debugging file upload issues
+- **Frontend**: Added console logging to track file details and FormData construction
+- **User Experience**: Clear error messages for failed uploads and batch processing results
+
+## Key Design Decisions
 
 1. **Monorepo Structure**: Frontend (`client/`), backend (`server/`), and shared code (`shared/`) in single repository for easier development and deployment.
 
@@ -124,3 +142,5 @@ Preferred communication style: Simple, everyday language.
 4. **Ocean Theme**: Custom design system with CSS variables and Tailwind extensions for cohesive underwater aesthetic.
 
 5. **Serverless-Ready**: Neon PostgreSQL and modular architecture designed for easy deployment to serverless platforms.
+
+6. **File Upload Architecture**: FormData handling with proper Content-Type detection for seamless image uploads.
