@@ -268,16 +268,26 @@ export default function Home() {
               <Button variant="ghost" size="sm" className="text-blue-200 hover:text-white">
                 <Bell className="w-4 h-4" />
               </Button>
-              <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
-                {user?.profileImageUrl ? (
-                  <img 
-                    src={user.profileImageUrl} 
-                    alt="Profile" 
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="w-4 h-4 text-white" />
-                )}
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-white">
+                    {user?.firstName || user?.email?.split('@')[0] || 'User'}
+                  </p>
+                  <p className="text-xs text-blue-200">
+                    {user?.email}
+                  </p>
+                </div>
+                <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
+                  {user?.profileImageUrl ? (
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt="Profile" 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 text-white" />
+                  )}
+                </div>
               </div>
               <Button 
                 variant="outline" 

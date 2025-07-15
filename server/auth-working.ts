@@ -111,6 +111,44 @@ export async function setupAuth(app: Express) {
     });
   });
 
+  // Forgot password endpoint
+  app.post("/api/auth/forgot-password", async (req: any, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists for security, but still return success
+        return res.json({ message: "If that email is registered, you'll receive reset instructions" });
+      }
+
+      // In a real app, you would:
+      // 1. Generate a secure reset token
+      // 2. Store it in database with expiration
+      // 3. Send email with reset link
+      // For now, we'll just simulate this
+      console.log(`Password reset requested for: ${email}`);
+      console.log(`Reset link: http://localhost:3000/reset-password?token=dummy-token-${Date.now()}`);
+
+      res.json({ 
+        message: "If that email is registered, you'll receive reset instructions",
+        // In development, show the reset info
+        dev: process.env.NODE_ENV === "development" ? {
+          email,
+          resetLink: `http://localhost:3000/reset-password?token=dummy-token-${Date.now()}`
+        } : undefined
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // GET logout endpoint for direct browser navigation
   app.get("/api/logout", (req: any, res) => {
     req.session.destroy((err: any) => {
