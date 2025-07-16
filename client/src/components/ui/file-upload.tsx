@@ -105,19 +105,19 @@ export function FileUpload({
         <div
           {...getRootProps()}
           className={cn(
-            "border-2 border-dashed border-cyan-400 rounded-2xl p-12 text-center cursor-pointer transition-all duration-200",
-            "hover:border-cyan-300 hover:bg-white/5",
-            isDragActive && "border-cyan-300 bg-white/10 scale-105",
+            "border-2 border-dashed border-ocean-500 rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 modern-card",
+            "hover:border-ocean-400 hover:bg-ocean-800/50",
+            isDragActive && "border-ocean-400 bg-ocean-800/70 scale-105 shadow-glow",
             isLoading && "pointer-events-none opacity-50"
           )}
         >
           <input {...getInputProps()} />
           <div className="group">
-            <CloudUpload className="w-12 h-12 text-cyan-400 mx-auto mb-4 group-hover:scale-110 transition-transform duration-200" />
+            <CloudUpload className="w-12 h-12 text-ocean-400 mx-auto mb-4 group-hover:scale-110 transition-transform duration-200 pulse-glow" />
             <h3 className="text-xl font-semibold text-white mb-2">
               {mode === 'batch' ? 'Upload Fish Images' : 'Upload Fish Image'}
             </h3>
-            <p className="text-blue-200 mb-4">
+            <p className="text-ocean-200 mb-4">
               {isDragActive 
                 ? "Drop the images here..." 
                 : mode === 'batch' 
@@ -125,14 +125,14 @@ export function FileUpload({
                 : "Drag and drop or click to select image"
               }
             </p>
-            <p className="text-blue-300 text-sm">
+            <p className="text-ocean-300 text-sm">
               Supports JPEG, PNG, WebP (Max {formatFileSize(maxSize)} each)
               {mode === 'batch' && <><br />Up to 10 images at once</>}
             </p>
           </div>
         </div>
       ) : (
-        <Card className="glass-morphism border-white/20">
+        <Card className="modern-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">
@@ -142,7 +142,7 @@ export function FileUpload({
                 {mode === 'batch' && selectedFiles.length > 0 && !isLoading && (
                   <Button
                     onClick={handleUpload}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                    className="modern-button"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -181,13 +181,13 @@ export function FileUpload({
                 
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <FileImage className="w-5 h-5 text-cyan-400" />
+                    <FileImage className="w-5 h-5 text-ocean-400" />
                     <span className="text-white font-medium truncate">{selectedFiles[0].name}</span>
                   </div>
-                  <p className="text-blue-200 text-sm">
+                  <p className="text-ocean-200 text-sm">
                     Size: {formatFileSize(selectedFiles[0].size)}
                   </p>
-                  <p className="text-blue-300 text-xs mt-1">
+                  <p className="text-ocean-300 text-xs mt-1">
                     {isLoading ? "Identifying fish..." : "Processing automatically..."}
                   </p>
                 </div>

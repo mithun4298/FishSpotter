@@ -249,23 +249,38 @@ export default function Home() {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen ocean-gradient flex items-center justify-center">
-      <div className="text-white">Loading...</div>
-    </div>;
+    return (
+      <div className="min-h-screen wave-pattern flex items-center justify-center">
+        <div className="modern-card p-8 text-center max-w-md mx-4">
+          <div className="mb-6">
+            <Fish className="w-16 h-16 text-ocean-400 mx-auto floating-animation pulse-glow" />
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold gradient-text">Fish ID</h2>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-2 h-2 bg-ocean-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-aqua-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+              <div className="w-2 h-2 bg-ocean-500 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+            </div>
+            <p className="text-ocean-200 text-sm">Preparing your underwater world...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className="min-h-screen wave-pattern">
       {/* Header */}
-      <header className="glass-morphism border-b border-white/20">
+      <header className="modern-card border-b border-ocean-800">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Fish className="w-6 h-6 text-cyan-300 transform -rotate-12" />
-              <h1 className="text-xl font-bold text-white">Fish ID</h1>
+              <Fish className="w-6 h-6 text-ocean-400 transform -rotate-12 floating-animation" />
+              <h1 className="text-xl font-bold gradient-text">Fish ID</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="text-blue-200 hover:text-white">
+              <Button variant="ghost" size="sm" className="text-ocean-200 hover:text-white pulse-glow">
                 <Bell className="w-4 h-4" />
               </Button>
               <div className="flex items-center space-x-3">
@@ -273,11 +288,11 @@ export default function Home() {
                   <p className="text-sm font-medium text-white">
                     {user?.firstName || user?.email?.split('@')[0] || 'User'}
                   </p>
-                  <p className="text-xs text-blue-200">
+                  <p className="text-xs text-ocean-200">
                     {user?.email}
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-ocean-500 rounded-full flex items-center justify-center shadow-glow">
                   {user?.profileImageUrl ? (
                     <img 
                       src={user.profileImageUrl} 
@@ -293,7 +308,7 @@ export default function Home() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="border-white/20 text-blue-200 hover:text-white hover:bg-white/10"
+                className="border-ocean-700 text-ocean-200 hover:text-white hover:bg-ocean-800 modern-button"
               >
                 Logout
               </Button>
@@ -305,19 +320,19 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Main Fish Identification Section */}
-        <Card className="glass-morphism border-white/20 mb-8">
+        <Card className="modern-card mb-8 shimmer">
           <CardContent className="p-8">
-            <h2 className="text-2xl font-semibold text-white mb-6 text-center">Fish Identification</h2>
+            <h2 className="text-2xl font-semibold text-white mb-6 text-center gradient-text">Fish Identification</h2>
             
             {/* Dual Source Selector */}
             <div className="flex gap-4 mb-8 max-w-md mx-auto">
               <Button
                 onClick={() => setSourceMode('camera')}
                 variant={sourceMode === 'camera' ? 'default' : 'outline'}
-                className={`flex-1 h-12 rounded-xl font-semibold ${
+                className={`flex-1 h-12 rounded-xl font-semibold transition-all duration-300 ${
                   sourceMode === 'camera' 
-                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
-                    : 'border-2 border-white/30 hover:bg-white/10 text-white bg-transparent'
+                    ? 'modern-button text-white shadow-glow' 
+                    : 'border-2 border-ocean-700 hover:bg-ocean-800 text-ocean-200 bg-transparent'
                 }`}
               >
                 <Camera className="h-5 w-5 mr-2" />
@@ -327,10 +342,10 @@ export default function Home() {
               <Button
                 onClick={() => setSourceMode('gallery')}
                 variant={sourceMode === 'gallery' ? 'default' : 'outline'}
-                className={`flex-1 h-12 rounded-xl font-semibold ${
+                className={`flex-1 h-12 rounded-xl font-semibold transition-all duration-300 ${
                   sourceMode === 'gallery' 
-                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
-                    : 'border-2 border-white/30 hover:bg-white/10 text-white bg-transparent'
+                    ? 'modern-button text-white shadow-glow' 
+                    : 'border-2 border-ocean-700 hover:bg-ocean-800 text-ocean-200 bg-transparent'
                 }`}
               >
                 <Upload className="h-5 w-5 mr-2" />
@@ -343,7 +358,7 @@ export default function Home() {
               <Button
                 onClick={sourceMode === 'camera' ? handleCameraCapture : handleGalleryUpload}
                 size="lg"
-                className="w-full h-32 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl flex flex-col gap-3 border-2 border-dashed border-white/30"
+                className="w-full h-32 modern-button text-white rounded-xl flex flex-col gap-3 border-2 border-dashed border-ocean-600 shadow-glow-lg hover:scale-105 transition-transform duration-300"
               >
                 {sourceMode === 'camera' ? (
                   <>
@@ -596,7 +611,15 @@ export default function Home() {
             
             {isLoadingIdentifications ? (
               <div className="text-center py-8">
-                <div className="text-blue-200">Loading identifications...</div>
+                <div className="modern-card p-6 inline-block">
+                  <Fish className="w-8 h-8 text-ocean-400 mx-auto mb-3 floating-animation" />
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-ocean-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-aqua-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-ocean-500 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                  </div>
+                  <div className="text-ocean-200 text-sm">Loading identifications...</div>
+                </div>
               </div>
             ) : !identifications || identifications.length === 0 ? (
               <div className="text-center py-8">

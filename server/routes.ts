@@ -7,6 +7,7 @@ import { identifyFish } from "./fishIdentification";
 import multer from "multer";
 import path from "path";
 import { insertFishIdentificationSchema } from "@shared/schema";
+import passport from "./passport.js";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -30,6 +31,23 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await auth.setupAuth(app);
+
+  // Google OAuth routes
+  app.get('/auth/google', 
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
+
+  app.get('/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/' }),
+    async (req: any, res) => {
+      // Set session data for compatibility with existing auth system
+      req.session.userId = req.user.id;
+      req.session.userEmail = req.user.email;
+      
+      // Redirect to home page after successful authentication
+      res.redirect('/home');
+    }
+  );
 
   // Auth routes
   app.get('/api/auth/user', auth.isAuthenticated, async (req: any, res) => {

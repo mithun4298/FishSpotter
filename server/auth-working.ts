@@ -1,6 +1,7 @@
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import { DatabaseStorage } from "./storage";
+import passport from "./passport.js";
 
 /**
  * Authentication System for FishSpotter
@@ -35,6 +36,10 @@ export function getSession() {
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
+  
+  // Initialize Passport middleware
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   const storage = new DatabaseStorage();
 
